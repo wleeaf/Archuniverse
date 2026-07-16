@@ -12,6 +12,7 @@ public:
     [[nodiscard]] bool equippable() const noexcept override { return true; }
 
     [[nodiscard]] int defence_value() const noexcept { return defence_.value(); }
+    [[nodiscard]] int defence_base() const noexcept { return defence_.base(); }
     [[nodiscard]] Attribute& defence() noexcept { return defence_; }
 
 private:

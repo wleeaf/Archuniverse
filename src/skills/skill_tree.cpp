@@ -61,6 +61,23 @@ Result<> SkillTree::unlock(std::string_view skill_name) {
     return ok();
 }
 
+void SkillTree::set_ability(Ability ability, int level) {
+    abilities_[ability] = level;
+    recompute_derived();
+}
+
+Result<> SkillTree::force_unlock(std::string_view skill_name) {
+    Skill* skill = find(skill_name);
+    if (skill == nullptr) return fail(GameError::Cancelled);
+    return skill->unlock(owner_);
+}
+
+bool SkillTree::is_unlocked(std::string_view skill_name) const {
+    const auto it = std::ranges::find_if(
+        skills_, [&](const std::unique_ptr<Skill>& s) { return s->name() == skill_name; });
+    return it != skills_.end() && (*it)->unlocked();
+}
+
 void SkillTree::recompute_derived() {
     owner_.melee().set_base(ability(Ability::Melee) * 5);
     owner_.magic().set_base(ability(Ability::Magic) * 5);

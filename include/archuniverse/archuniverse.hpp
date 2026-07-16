@@ -13,6 +13,7 @@
 #include "archuniverse/core/rng.hpp"
 #include "archuniverse/core/stat.hpp"
 #include "archuniverse/core/tickable.hpp"
+#include "archuniverse/core/vec3.hpp"
 
 #include "archuniverse/entities/character.hpp"
 #include "archuniverse/entities/living_entity.hpp"
@@ -34,5 +35,17 @@
 #include "archuniverse/combat/bleed.hpp"
 #include "archuniverse/combat/combat.hpp"
 #include "archuniverse/combat/combat_manager.hpp"
+
+#include "archuniverse/ai/ai_system.hpp"
+#include "archuniverse/ai/behavior.hpp"
+#include "archuniverse/ai/behaviors.hpp"
+
+#include "archuniverse/persistence/snapshot.hpp"
+
+#include "archuniverse/net/channel.hpp"
+#include "archuniverse/net/client.hpp"
+#include "archuniverse/net/loopback.hpp"
+#include "archuniverse/net/protocol.hpp"
+#include "archuniverse/net/server.hpp"
 
 #include "archuniverse/world/world.hpp"

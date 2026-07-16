@@ -89,6 +89,15 @@ LivingEntity::Action LivingEntity::plan_defence() const {
     return Action{FightType::CannotDefend, 0};
 }
 
+void LivingEntity::move_toward(const Vec3& target, double max_step) noexcept {
+    const Vec3 delta = target - position_;
+    const double dist = delta.length();
+    if (dist <= max_step || dist == 0.0)
+        position_ = target;
+    else
+        position_ = position_ + delta.normalized() * max_step;
+}
+
 int LivingEntity::apply_damage(int amount) {
     const int before = health_.current();
     health_.damage(std::max(0, amount));
@@ -121,6 +130,9 @@ void LivingEntity::level_up() {
 
 void LivingEntity::tick(float dt) {
     if (dead()) return;
+
+    // Kinematic integration (velocity is zero unless something drives it).
+    if (velocity_ != Vec3{}) position_ = position_ + velocity_ * static_cast<double>(dt);
 
     for (auto it = statuses_.begin(); it != statuses_.end();) {
         if ((*it)->advance(*this, dt)) {

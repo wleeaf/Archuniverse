@@ -14,6 +14,9 @@ public:
 
     [[nodiscard]] int attack_value() const noexcept { return attack_.value(); }
     [[nodiscard]] int defence_value() const noexcept { return defence_.value(); }
+    // Intrinsic values without enchantment modifiers (used for save/load).
+    [[nodiscard]] int attack_base() const noexcept { return attack_.base(); }
+    [[nodiscard]] int defence_base() const noexcept { return defence_.base(); }
     [[nodiscard]] Attribute& attack() noexcept { return attack_; }
     [[nodiscard]] Attribute& defence() noexcept { return defence_; }
 

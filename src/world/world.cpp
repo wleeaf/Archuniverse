@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include "archuniverse/ai/behavior.hpp"  // complete type for Monster's unique_ptr<Behavior>
+
 namespace arch {
 
 Character& World::spawn_character(std::string name, Character::Sex gender, int level, int gold,
@@ -22,6 +24,7 @@ Monster& World::spawn_monster(std::string name, int level, int base_attack, int 
                                             max_stamina, speed);
     Monster& ref = *entity;
     entities_.push_back(std::move(entity));
+    ai_.register_monster(ref);
     return ref;
 }
 
@@ -62,6 +65,16 @@ Ware& World::make_ware(std::string name, Item::Grade grade, int worth) {
     Ware& ref = *item;
     items_.push_back(std::move(item));
     return ref;
+}
+
+std::vector<LivingEntity*> World::entities_within(const Vec3& center, double radius) const {
+    const double radius_sq = radius * radius;
+    std::vector<LivingEntity*> result;
+    for (const auto& entity : entities_) {
+        if (distance_squared(center, entity->position()) <= radius_sq)
+            result.push_back(entity.get());
+    }
+    return result;
 }
 
 }  // namespace arch

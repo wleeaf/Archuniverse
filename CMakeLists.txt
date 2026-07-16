@@ -29,11 +29,16 @@ target_compile_options(archuniverse PRIVATE
     -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion)
 
 # ----------------------------------------------------------------------------
-# Demo executable
+# Demo executables
 # ----------------------------------------------------------------------------
 add_executable(archuniverse_demo apps/demo/main.cpp)
 target_link_libraries(archuniverse_demo PRIVATE archuniverse)
 target_compile_options(archuniverse_demo PRIVATE -Wall -Wextra -Wpedantic)
+
+find_package(Threads REQUIRED)
+add_executable(archuniverse_net_demo apps/net_demo/main.cpp)
+target_link_libraries(archuniverse_net_demo PRIVATE archuniverse Threads::Threads)
+target_compile_options(archuniverse_net_demo PRIVATE -Wall -Wextra -Wpedantic)
 
 # ----------------------------------------------------------------------------
 # Tests

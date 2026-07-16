@@ -10,6 +10,7 @@
 #include "archuniverse/core/result.hpp"
 #include "archuniverse/core/stat.hpp"
 #include "archuniverse/core/tickable.hpp"
+#include "archuniverse/core/vec3.hpp"
 #include "archuniverse/entities/status_effect.hpp"
 
 namespace arch {
@@ -63,6 +64,23 @@ public:
     [[nodiscard]] int xp() const noexcept { return xp_; }
     [[nodiscard]] double speed() const noexcept { return speed_; }
     void set_speed(double s) noexcept { speed_ = s; }
+
+    // Direct state setters, intended for save-game restore (they bypass the
+    // level-up side effects of add_xp).
+    void set_level(int level) noexcept { level_ = level; }
+    void set_xp(int xp) noexcept { xp_ = xp; }
+
+    // Spatial state
+    [[nodiscard]] const Vec3& position() const noexcept { return position_; }
+    void set_position(const Vec3& p) noexcept { position_ = p; }
+    [[nodiscard]] const Vec3& velocity() const noexcept { return velocity_; }
+    void set_velocity(const Vec3& v) noexcept { velocity_ = v; }
+    void move_by(const Vec3& delta) noexcept { position_ = position_ + delta; }
+    [[nodiscard]] double distance_to(const LivingEntity& other) const noexcept {
+        return distance(position_, other.position_);
+    }
+    // Step toward target by at most max_step; snaps to target if closer.
+    void move_toward(const Vec3& target, double max_step) noexcept;
 
     [[nodiscard]] SkillTree& skills() noexcept { return *skills_; }
     [[nodiscard]] Context& context() noexcept { return ctx_; }
@@ -119,9 +137,8 @@ protected:
     int xp_{0};
     int level_{1};
     double speed_{1.0};
-    double x_{0.0};
-    double y_{0.0};
-    double z_{0.0};
+    Vec3 position_{};
+    Vec3 velocity_{};
 
     std::unique_ptr<SkillTree> skills_;
     std::vector<std::unique_ptr<StatusEffect>> statuses_;

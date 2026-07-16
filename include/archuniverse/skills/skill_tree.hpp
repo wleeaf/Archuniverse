@@ -28,6 +28,12 @@ public:
     [[nodiscard]] int unused_points() const noexcept { return unused_points_; }
 
     Result<> unlock(std::string_view skill_name);
+
+    // Save/load helpers: set state directly without spending points.
+    void set_ability(Ability ability, int level);
+    void set_unused_points(int points) noexcept { unused_points_ = points; }
+    Result<> force_unlock(std::string_view skill_name);
+    [[nodiscard]] bool is_unlocked(std::string_view skill_name) const;
     [[nodiscard]] const std::vector<std::unique_ptr<Skill>>& skills() const noexcept {
         return skills_;
     }

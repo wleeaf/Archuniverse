@@ -6,12 +6,14 @@
 #include <string>
 #include <vector>
 
+#include "archuniverse/ai/ai_system.hpp"
 #include "archuniverse/combat/combat_manager.hpp"
 #include "archuniverse/core/context.hpp"
 #include "archuniverse/core/event_bus.hpp"
 #include "archuniverse/core/game_loop.hpp"
 #include "archuniverse/core/id.hpp"
 #include "archuniverse/core/rng.hpp"
+#include "archuniverse/core/vec3.hpp"
 #include "archuniverse/entities/character.hpp"
 #include "archuniverse/entities/monster.hpp"
 #include "archuniverse/items/armor.hpp"
@@ -40,6 +42,7 @@ public:
     [[nodiscard]] Rng& rng() noexcept { return rng_; }
     [[nodiscard]] Context context() noexcept { return Context{loop_, bus_, rng_}; }
     [[nodiscard]] CombatManager& combat() noexcept { return combat_; }
+    [[nodiscard]] AiSystem& ai() noexcept { return ai_; }
 
     // Entity factories (the World owns the returned reference).
     Character& spawn_character(std::string name, Character::Sex gender, int level, int gold,
@@ -64,12 +67,47 @@ public:
     [[nodiscard]] std::size_t entity_count() const noexcept { return entities_.size(); }
     [[nodiscard]] std::size_t item_count() const noexcept { return items_.size(); }
 
+    // Direct access to owned storage (iteration, spatial queries, persistence).
+    [[nodiscard]] const std::vector<std::unique_ptr<LivingEntity>>& entities() const noexcept {
+        return entities_;
+    }
+    [[nodiscard]] const std::vector<std::unique_ptr<Item>>& items() const noexcept {
+        return items_;
+    }
+
+    [[nodiscard]] LivingEntity* find_entity(Id id) const {
+        for (const auto& entity : entities_)
+            if (entity->id() == id) return entity.get();
+        return nullptr;
+    }
+
+    // Spatial queries.
+    [[nodiscard]] std::vector<LivingEntity*> entities_within(const Vec3& center,
+                                                             double radius) const;
+
+    // Nearest living entity to a point satisfying pred (excludes the dead).
+    template <class Pred>
+    [[nodiscard]] LivingEntity* nearest(const Vec3& from, Pred pred) const {
+        LivingEntity* best = nullptr;
+        double best_dist = 0.0;
+        for (const auto& entity : entities_) {
+            if (entity->dead() || !pred(*entity)) continue;
+            const double d = distance_squared(from, entity->position());
+            if (best == nullptr || d < best_dist) {
+                best = entity.get();
+                best_dist = d;
+            }
+        }
+        return best;
+    }
+
 private:
     GameLoop loop_;
     EventBus bus_;
     Rng rng_;
     IdGenerator ids_;
     CombatManager combat_{Context{loop_, bus_, rng_}};
+    AiSystem ai_{*this};
     std::vector<std::unique_ptr<LivingEntity>> entities_;
     std::vector<std::unique_ptr<Item>> items_;
 };

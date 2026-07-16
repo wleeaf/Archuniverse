@@ -21,6 +21,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j
 
 ./build/archuniverse_demo          # the Izroth vs Lila duel
+./build/archuniverse_net_demo      # a client mirrors a server world over TCP
 ctest --test-dir build             # run the unit tests
 ```
 
@@ -34,17 +35,21 @@ doctest suite. Everything lives under `namespace arch`.
 
 ```
 include/archuniverse/
-  core/      result, ids, rng, stat (Attribute/Vital), event bus,
-             tickable, fixed-timestep game loop, context, events
-  entities/  LivingEntity, Character, Monster, StatusEffect
-  items/     Item + Weapon/Armor/Potion/Food/Ware, Effect, special effects
-  skills/    Skill, SkillTree
-  combat/    Combat, CombatManager, BleedEffect
-  world/     World (owns everything; the one injectable context)
-src/         implementations mirroring the headers
-apps/demo/   the runnable demo
-tests/       doctest unit tests
-third_party/ vendored doctest single header
+  core/         result, ids, rng, vec3, stat (Attribute/Vital), event bus,
+                tickable, fixed-timestep game loop, context, events
+  entities/     LivingEntity, Character, Monster, StatusEffect
+  items/        Item + Weapon/Armor/Potion/Food/Ware, Effect, special effects
+  skills/       Skill, SkillTree
+  combat/       Combat, CombatManager, BleedEffect
+  ai/           Behavior, IdleBehavior/WanderBehavior/HunterBehavior, AiSystem
+  persistence/  save/load snapshot (tab-separated text)
+  net/          Channel, Loopback + TCP transports, protocol, GameServer/GameClient
+  world/        World (owns everything; the one injectable context)
+src/            implementations mirroring the headers
+apps/demo/      the combat demo
+apps/net_demo/  a TCP client/server replication demo
+tests/          doctest unit tests
+third_party/    vendored doctest single header
 ```
 
 ### Load-bearing ideas
@@ -73,9 +78,30 @@ third_party/ vendored doctest single header
   to their host instead of floating free on a global loop.
 
 - **One `World`, no singletons** (`world/world.hpp`). The World owns the loop,
-  bus, rng, all entities, and all items, and hands each object a `Context` of
-  references. This replaces the old scattered `GameLoop` / `SoulLedger` /
-  `ItemManager` singletons.
+  bus, rng, all entities, all items, the combat manager, and the AI system, and
+  hands each object a `Context` of references. This replaces the old scattered
+  `GameLoop` / `SoulLedger` / `ItemManager` singletons.
+
+- **Spatial world** (`core/vec3.hpp`, `world/world.hpp`). Entities carry a
+  position and velocity; the World answers range and nearest-neighbor queries
+  (`entities_within`, `nearest`) used by the AI.
+
+- **Monster AI** (`ai/`). A `Behavior` is invoked per tick by the `AiSystem`
+  with full World access. Ships with idle, wander (random walk around a home),
+  and hunter (chase the nearest character and open combat in range) behaviors.
+
+- **Persistence** (`persistence/snapshot.hpp`). A tab-separated text save that
+  round-trips entities, items, progression, equipment, and positions. It
+  re-equips gear and re-unlocks skills on load, so modifier-based bonuses are
+  replayed rather than double-counted. (Transient status effects and code-
+  attached enchantments are not persisted yet.)
+
+- **Networking** (`net/`). A transport-agnostic `Channel` with an in-process
+  `LoopbackPair` (for tests and single-process play) and a real length-framed
+  POSIX `TcpChannel`/`TcpListener`. `GameServer` applies client commands
+  (`STEP`, `START_COMBAT`, `SNAPSHOT_REQUEST`) to the authoritative World;
+  `GameClient` issues commands and loads replicated snapshots into a mirror
+  World. State replication reuses the persistence format.
 
 ## What changed from the C# prototype
 
@@ -89,5 +115,7 @@ third_party/ vendored doctest single header
 
 ## Status
 
-Early. The combat core, items, skills, progression, and world are in place and
-tested. Networking, persistence, spatial world, and scripting are future work.
+The combat core, items, skills, progression, world, spatial queries, monster
+AI, save/load persistence, and networking (loopback + TCP) are in place and
+tested. Scripting, a proper spatial index for large worlds, richer AI, and
+client-side prediction are future work.
